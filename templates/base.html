@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "物资岗位考试系统" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">物资岗位考试系统</a>
+    <nav class="nav">
+      {% if current_user %}
+        {% if current_user.role == "admin" %}
+          <a href="{{ url_for('admin_dashboard') }}">看板</a>
+          <a href="{{ url_for('admin_users') }}">人员审核</a>
+          <a href="{{ url_for('admin_papers') }}">题库</a>
+          <a href="{{ url_for('admin_review') }}">阅卷</a>
+          <a href="{{ url_for('admin_results') }}">成绩</a>
+        {% elif current_user.status == "approved" %}
+          <a href="{{ url_for('employee_home') }}">首页</a>
+          <a href="{{ url_for('results') }}">成绩</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}">退出</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">登录</a>
+        <a href="{{ url_for('register') }}">注册</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="page">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    // Add CSRF token to all forms
+    document.addEventListener('DOMContentLoaded', function() {
+      const token = '{{ csrf_token() }}';
+      document.querySelectorAll('form[method="post"]').forEach(form => {
+        let input = form.querySelector('input[name="csrf_token"]');
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'csrf_token';
+          form.appendChild(input);
+        }
+        input.value = token;
+      });
+    });
+  </script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

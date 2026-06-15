@@ -1,0 +1,20 @@
+{% if attempts %}
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>试卷</th><th>状态</th><th>客观题</th><th>主观题建议分</th><th>最终分</th></tr></thead>
+    <tbody>
+      {% for item in attempts %}
+      <tr>
+        <td>{{ item.paper_title }}</td>
+        <td>{{ status_label(item.status) }}</td>
+        <td>{{ item.objective_score }}</td>
+        <td>{{ item.suggested_subjective_score }}</td>
+        <td>{{ item.final_score if item.final_score is not none else "待阅卷" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="muted">暂无成绩。</p>
+{% endif %}

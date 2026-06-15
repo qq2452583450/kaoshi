@@ -1,0 +1,181 @@
+:root {
+  --bg: #f4f7f6;
+  --panel: #ffffff;
+  --ink: #1d2b2a;
+  --muted: #60706e;
+  --line: #d8e0de;
+  --primary: #176b5b;
+  --primary-dark: #0f4f43;
+  --warn: #8a5a00;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  line-height: 1.5;
+}
+
+a { color: var(--primary); text-decoration: none; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { font-weight: 700; color: var(--ink); }
+.nav { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.nav a { padding: 8px 6px; color: var(--ink); }
+
+.page {
+  width: min(1180px, calc(100% - 32px));
+  margin: 24px auto 56px;
+}
+
+.panel, .card, .metric, .review {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.auth-panel { max-width: 460px; margin: 48px auto; }
+.section-head { margin-bottom: 16px; }
+h1 { margin: 0 0 16px; font-size: 28px; }
+h2 { margin: 0 0 10px; font-size: 18px; }
+
+.form, .filters, .inline-form { display: grid; gap: 12px; }
+.inline-form {
+  grid-template-columns: minmax(160px, 1fr) minmax(220px, 2fr) auto;
+  align-items: end;
+  margin-bottom: 18px;
+}
+label { display: grid; gap: 6px; font-weight: 600; }
+input, select, textarea {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px;
+  font: inherit;
+  background: #fff;
+}
+textarea { resize: vertical; }
+
+button, .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.primary:hover { background: var(--primary-dark); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.metric span { display: block; color: var(--muted); }
+.metric strong { display: block; margin-top: 8px; font-size: 28px; }
+
+.question {
+  border-top: 1px solid var(--line);
+  padding: 16px 0;
+}
+.question:first-child { border-top: 0; }
+.question.compact { padding: 10px 0; }
+.choice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  min-height: 36px;
+  padding: 6px 0;
+  font-weight: 400;
+}
+.choice input { width: auto; min-height: auto; margin-top: 4px; }
+.answer { color: var(--primary-dark); background: #edf7f4; padding: 10px; border-radius: 6px; }
+
+.exam-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#timer { font-weight: 700; color: var(--warn); font-size: 22px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 680px; }
+th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 700; }
+
+.inline { display: flex; gap: 8px; flex-wrap: wrap; }
+.flash, .warning {
+  margin-bottom: 16px;
+  border: 1px solid #f0d28a;
+  background: #fff8e6;
+  color: var(--warn);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.muted { color: var(--muted); }
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.paper-detail { margin-bottom: 12px; }
+.paper-detail summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+.review { margin-bottom: 14px; }
+
+@media (max-width: 720px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 10px 14px;
+  }
+  .nav {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  .page {
+    width: min(100% - 20px, 680px);
+    margin-top: 14px;
+    margin-bottom: 32px;
+  }
+  h1 { font-size: 23px; }
+  .panel, .card, .metric, .review { padding: 14px; }
+  .filters { grid-template-columns: 1fr; }
+  .inline-form { grid-template-columns: 1fr; }
+  .exam-head { align-items: flex-start; flex-direction: column; }
+  table { min-width: 600px; }
+  button, .button { width: 100%; }
+  .inline button { width: auto; }
+}

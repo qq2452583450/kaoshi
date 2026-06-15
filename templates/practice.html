@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>练习模式</h1>
+  <form method="post">
+    {% for q in questions %}
+      <article class="question">
+        <input type="hidden" name="question_ids" value="{{ q.id }}">
+        <h2>{{ q.order_no }}. {{ q.stem }}</h2>
+        {% if q.options %}
+          {% for opt in q.options %}
+            <label class="choice"><input type="{{ 'checkbox' if q.question_type == 'multiple_choice' else 'radio' }}" name="answer_{{ q.id }}" value="{{ opt.key }}"> {{ opt.key }}. {{ opt.text }}</label>
+          {% endfor %}
+        {% elif q.question_type == "true_false" %}
+          <label class="choice"><input type="radio" name="answer_{{ q.id }}" value="√"> 正确</label>
+          <label class="choice"><input type="radio" name="answer_{{ q.id }}" value="×"> 错误</label>
+        {% else %}
+          <textarea name="answer_{{ q.id }}" rows="4"></textarea>
+        {% endif %}
+        {% if feedback %}
+          <p class="answer">你的答案：{{ feedback[q.id|string] }} | 正确答案/参考答案：{{ q.correct_answer or q.reference_answer }}</p>
+        {% endif %}
+      </article>
+    {% endfor %}
+    <button class="primary" type="submit">查看答案</button>
+  </form>
+</section>
+{% endblock %}

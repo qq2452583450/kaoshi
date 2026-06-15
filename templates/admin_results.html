@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>成绩查询</h1>
+  <form class="filters" method="get">
+    <input name="keyword" placeholder="姓名或手机号" value="{{ filters.get('keyword','') }}">
+    <select name="paper_id">
+      <option value="">全部试卷</option>
+      {% for paper in papers %}<option value="{{ paper.id }}" {% if filters.get('paper_id') == paper.id|string %}selected{% endif %}>{{ paper.title }}</option>{% endfor %}
+    </select>
+    <button type="submit">筛选</button>
+    <a class="button" href="{{ url_for('admin_results_csv', **filters) }}">导出 CSV</a>
+  </form>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>姓名</th><th>组织</th><th>试卷</th><th>状态</th><th>分数</th></tr></thead>
+      <tbody>
+        {% for row in results %}
+        <tr>
+          <td>{{ row.user_name }}<br><span class="muted">{{ row.mobile }}</span></td>
+          <td>{{ row.region }} / {{ row.project }} / {{ row.position }}</td>
+          <td>{{ row.paper_title }}</td>
+          <td>{{ status_label(row.status) }}</td>
+          <td>{{ row.final_score if row.final_score is not none else "待阅卷" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

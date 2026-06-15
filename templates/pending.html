@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>等待管理员审核</h1>
+  <p>当前账号状态：<strong>{{ status_label(current_user.status) }}</strong>。</p>
+  <p class="muted">管理员审核通过后，才能进入练习和考试。</p>
+</section>
+{% endblock %}

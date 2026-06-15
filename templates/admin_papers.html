@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>题库管理</h1>
+  {% if papers %}
+    <form class="inline-form" method="post" action="{{ url_for('admin_set_current_paper') }}">
+      <label for="paper_id">当前考试试卷</label>
+      <select id="paper_id" name="paper_id">
+        {% for paper in papers %}
+          <option value="{{ paper.id }}" {% if current_exam_paper and paper.id == current_exam_paper.id %}selected{% endif %}>{{ paper.title }}</option>
+        {% endfor %}
+      </select>
+      <button class="primary" type="submit">保存设置</button>
+    </form>
+  {% endif %}
+  {% for paper in papers %}
+    <details class="paper-detail">
+      <summary>{{ paper.title }}（{{ paper.questions|length }} 题）</summary>
+      {% for q in paper.questions %}
+        <article class="question compact">
+          <strong>{{ q.order_no }}. {{ question_type_label(q.question_type) }}</strong>
+          <p>{{ q.stem }}</p>
+          <p class="muted">{{ q.correct_answer or q.reference_answer }}</p>
+        </article>
+      {% endfor %}
+    </details>
+  {% endfor %}
+</section>
+{% endblock %}

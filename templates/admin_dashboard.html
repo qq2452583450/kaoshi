@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section-head">
+  <h1>管理看板</h1>
+  {% if import_status.warning %}<p class="warning">{{ import_status.warning }} 当前演示已导入 {{ import_status.paper_count }} 套完整试卷。</p>{% endif %}
+</section>
+<div class="metrics">
+  <div class="metric"><span>注册人数</span><strong>{{ user_count }}</strong></div>
+  <div class="metric"><span>待审核人员</span><strong>{{ pending_user_count }}</strong></div>
+  <div class="metric"><span>待阅卷</span><strong>{{ pending_review_count }}</strong></div>
+  <div class="metric"><span>考试次数</span><strong>{{ result_count }}</strong></div>
+  <div class="metric"><span>平均分</span><strong>{{ average_score if average_score is not none else "-" }}</strong></div>
+</div>
+{% endblock %}

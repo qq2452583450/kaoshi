@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section-head">
+  <h1>学习首页</h1>
+  {% if import_status.warning %}<p class="warning">{{ import_status.warning }} 当前演示已导入 {{ import_status.paper_count }} 套完整试卷。</p>{% endif %}
+</section>
+<div class="grid">
+  {% if current_exam_paper %}
+    <article class="card">
+      <p class="eyebrow">当前正式考试</p>
+      <h2>{{ current_exam_paper.title }}</h2>
+      <p>{{ current_exam_paper.total_score }} 分 / {{ current_exam_paper.duration_minutes }} 分钟</p>
+      <div class="actions">
+        <a class="button primary" href="{{ url_for('exam', paper_id=current_exam_paper.id) }}">进入考试</a>
+      </div>
+    </article>
+  {% endif %}
+  <article class="card">
+    <p class="eyebrow">平时练习</p>
+    <h2>随机抽题练习</h2>
+    <p>系统从全部题库随机抽题，适合日常复习和查漏补缺。</p>
+    <div class="actions">
+      <a class="button" href="{{ url_for('random_practice') }}">开始练习</a>
+    </div>
+  </article>
+</div>
+<section class="panel">
+  <h2>最近成绩</h2>
+  {% include "results_table.html" %}
+</section>
+{% endblock %}
