@@ -1,5 +1,7 @@
 """Scoring helpers for objective and subjective exam answers."""
 
+from __future__ import annotations
+
 
 def _normalize_answer(value: str) -> str:
     return (value or "").strip().replace(" ", "").upper()
