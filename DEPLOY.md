@@ -2,6 +2,22 @@
 
 以下示例适用于 Ubuntu 22.04/24.04 + Python 3 + Gunicorn + Nginx。
 
+Windows Server 可使用仓库内的 `run_server.ps1`，通过 Waitress 在 `0.0.0.0:8000` 启动：
+
+```powershell
+cd C:\kaoshi
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+"$env:SECRET_KEY = '请替换为足够长的随机密钥'" | Set-Content .env.ps1 -Encoding UTF8
+powershell -ExecutionPolicy Bypass -File C:\kaoshi\run_server.ps1
+```
+
+注册开机启动任务：
+
+```powershell
+schtasks /Create /TN "KaoshiExamSystem" /SC ONSTART /RL HIGHEST /RU "SYSTEM" /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\kaoshi\run_server.ps1" /F
+```
+
 ## 1. 拉取代码
 
 ```bash
