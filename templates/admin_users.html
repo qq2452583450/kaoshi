@@ -22,6 +22,7 @@
           <td>
             {% if user.role != "admin" %}
             <form method="post" action="{{ url_for('admin_set_user_status', user_id=user.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button name="status" value="approved">通过</button>
               <button name="status" value="rejected">驳回</button>
             </form>

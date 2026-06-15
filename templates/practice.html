@@ -3,6 +3,7 @@
 <section class="panel">
   <h1>练习模式</h1>
   <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% for q in questions %}
       <article class="question">
         <input type="hidden" name="question_ids" value="{{ q.id }}">

@@ -1,4 +1,5 @@
 from werkzeug.datastructures import MultiDict
+import re
 
 from app import _collect_answers, create_app
 from exam_system import db, services
@@ -71,6 +72,25 @@ def test_collect_answers_preserves_multiple_choice_values():
     questions = [{"id": 1}, {"id": 2}, {"id": 3}]
 
     assert _collect_answers(form, questions) == {"1": "AC", "2": "√", "3": ""}
+
+
+def test_production_login_form_includes_csrf_and_accepts_admin_login(tmp_path, monkeypatch):
+    client = _client(tmp_path, monkeypatch)
+    client.application.config["TESTING"] = False
+
+    response = client.get("/login")
+    html = response.get_data(as_text=True)
+    match = re.search(r'name="csrf_token" value="([^"]+)"', html)
+
+    assert match
+
+    response = client.post(
+        "/login",
+        data={"csrf_token": match.group(1), "mobile": "admin", "password": "admin123"},
+        follow_redirects=True,
+    )
+
+    assert "管理看板" in response.get_data(as_text=True)
 
 
 def test_admin_selected_paper_controls_employee_exam_access(tmp_path, monkeypatch):

@@ -6,6 +6,7 @@
     <div id="timer" data-deadline="{{ deadline }}">50:00</div>
   </div>
   <form id="exam-form" method="post" action="{{ url_for('submit_exam', attempt_id=attempt_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% for q in questions %}
       <article class="question">
         <h2>{{ q.order_no }}. {{ q.stem }}</h2>

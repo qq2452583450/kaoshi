@@ -4,6 +4,7 @@
   <h1>题库管理</h1>
   {% if papers %}
     <form class="inline-form" method="post" action="{{ url_for('admin_set_current_paper') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label for="paper_id">当前考试试卷</label>
       <select id="paper_id" name="paper_id">
         {% for paper in papers %}

@@ -9,6 +9,7 @@
       <p><strong>考生答案：</strong>{{ item.answer_text }}</p>
       <p><strong>参考答案：</strong>{{ item.reference_answer }}</p>
       <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="answer_id" value="{{ item.answer_id }}">
         <label>最终得分<input name="final_score" type="number" step="0.5" min="0" max="{{ item.question_score }}" value="{{ item.suggested_score }}"></label>
         <label>评语<input name="comment"></label>
