@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import db
@@ -16,7 +16,7 @@ SUBJECTIVE_TYPES = {"short_answer", "case_analysis"}
 
 
 def _now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def _dict(row):

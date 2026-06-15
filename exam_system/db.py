@@ -180,7 +180,7 @@ def init_db() -> None:
                 DEFAULT_ADMIN_MOBILE,
                 password_hash,
                 password_salt,
-                datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds"),
+                datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
                 DEFAULT_ADMIN_MOBILE,
             ),
         )

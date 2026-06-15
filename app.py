@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import (
     Flask,
@@ -168,7 +168,7 @@ def create_app() -> Flask:
             return redirect(url_for("employee_home"))
         user = current_user()
         attempt_id = services.start_attempt(user["id"], paper_id)
-        deadline = datetime.now(UTC) + timedelta(minutes=EXAM_DURATION_MINUTES)
+        deadline = datetime.now(timezone.utc) + timedelta(minutes=EXAM_DURATION_MINUTES)
         return render_template(
             "exam.html",
             title="正式考试",
