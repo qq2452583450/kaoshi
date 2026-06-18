@@ -264,5 +264,20 @@ def test_parse_project_material_question_bank_docx():
     assert paper["questions"][51]["correct_answer"] == "√"
 
 
+def test_parse_warehouse_receiving_exam_docx_has_five_complete_papers():
+    exam_docx = next(path for path in Path.cwd().glob("*.docx") if path.stat().st_size == 49641)
+
+    papers = parse_docx(exam_docx)
+
+    assert [paper["title"] for paper in papers] == [
+        "第一套（新编实操版）",
+        "第二套（新编案例版）",
+        "第三套（新编内控版）",
+        "第四套（新编实操易错版）",
+        "第五套（新编综合押题版）",
+    ]
+    assert all(len(paper["questions"]) == 38 for paper in papers)
+
+
 def _original_exam_docx():
     return next(path for path in Path.cwd().glob("*.docx") if path.stat().st_size == 40539)

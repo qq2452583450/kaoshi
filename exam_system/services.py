@@ -180,6 +180,117 @@ def import_question_bank_docx(path) -> dict:
     return {"paper_id": paper_id, "created": True}
 
 
+def replace_exam_papers_from_docx(path) -> dict:
+    papers = parse_docx(Path(path))
+    preserved_title = "项目物资管理岗位考核题库"
+    with db.connect() as conn:
+        rows = conn.execute(
+            "select id from papers where title != ? order by id",
+            (preserved_title,),
+        ).fetchall()
+        paper_ids = [row["id"] for row in rows]
+        removed = len(paper_ids)
+        if paper_ids:
+            _delete_papers(conn, paper_ids)
+
+        first_paper_id = None
+        for paper in papers:
+            paper_id = _insert_paper(conn, paper)
+            if first_paper_id is None:
+                first_paper_id = paper_id
+
+        if first_paper_id is not None:
+            conn.execute(
+                """
+                insert into app_settings (key, value)
+                values ('current_exam_paper_id', ?)
+                on conflict(key) do update set value = excluded.value
+                """,
+                (str(first_paper_id),),
+            )
+    return {"inserted": len(papers), "removed": removed}
+
+
+def _insert_paper(conn, paper: dict) -> int:
+    cursor = conn.execute(
+        "insert into papers (title, duration_minutes, total_score) values (?, ?, ?)",
+        (paper["title"], paper["duration_minutes"], paper["total_score"]),
+    )
+    paper_id = int(cursor.lastrowid)
+    for question in paper["questions"]:
+        question_cursor = conn.execute(
+            """
+            insert into questions
+            (paper_id, question_type, order_no, stem, correct_answer, reference_answer, keywords, score)
+            values (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                paper_id,
+                question["question_type"],
+                question["order_no"],
+                question["stem"],
+                question.get("correct_answer", ""),
+                question.get("reference_answer", ""),
+                question.get("keywords", ""),
+                question["score"],
+            ),
+        )
+        question_id = int(question_cursor.lastrowid)
+        for option in question.get("options", []):
+            conn.execute(
+                """
+                insert into question_options (question_id, option_key, option_text)
+                values (?, ?, ?)
+                """,
+                (question_id, option["key"], option["text"]),
+            )
+    return paper_id
+
+
+def _delete_papers(conn, paper_ids: list[int]) -> None:
+    placeholders = ",".join("?" for _ in paper_ids)
+    question_rows = conn.execute(
+        f"select id from questions where paper_id in ({placeholders})",
+        paper_ids,
+    ).fetchall()
+    question_ids = [row["id"] for row in question_rows]
+    attempt_rows = conn.execute(
+        f"select id from exam_attempts where paper_id in ({placeholders})",
+        paper_ids,
+    ).fetchall()
+    attempt_ids = [row["id"] for row in attempt_rows]
+
+    if attempt_ids:
+        attempt_placeholders = ",".join("?" for _ in attempt_ids)
+        answer_rows = conn.execute(
+            f"select id from answers where attempt_id in ({attempt_placeholders})",
+            attempt_ids,
+        ).fetchall()
+        answer_ids = [row["id"] for row in answer_rows]
+        if answer_ids:
+            answer_placeholders = ",".join("?" for _ in answer_ids)
+            conn.execute(
+                f"delete from subjective_reviews where answer_id in ({answer_placeholders})",
+                answer_ids,
+            )
+        conn.execute(f"delete from answers where attempt_id in ({attempt_placeholders})", attempt_ids)
+        conn.execute(f"delete from exam_attempts where id in ({attempt_placeholders})", attempt_ids)
+
+    if question_ids:
+        question_placeholders = ",".join("?" for _ in question_ids)
+        conn.execute(
+            f"delete from practice_attempts where question_id in ({question_placeholders})",
+            question_ids,
+        )
+        conn.execute(
+            f"delete from question_options where question_id in ({question_placeholders})",
+            question_ids,
+        )
+        conn.execute(f"delete from questions where id in ({question_placeholders})", question_ids)
+
+    conn.execute(f"delete from papers where id in ({placeholders})", paper_ids)
+
+
 def ensure_papers_seeded() -> dict:
     existing = list_papers()
     if existing:
@@ -201,16 +312,25 @@ def ensure_papers_seeded() -> dict:
 
 def _seed_source_priority(path: Path) -> tuple[int, str]:
     name = path.name
-    if "岗位职责专项考试卷" in name:
+    if "材料进场验收标准专项考试卷" in name:
         return (0, name)
+    if "岗位职责专项考试卷" in name:
+        return (1, name)
     if "题库" in name:
-        return (2, name)
-    return (1, name)
+        return (3, name)
+    return (2, name)
 
 
 def list_papers() -> list[dict]:
     with db.connect() as conn:
-        rows = conn.execute("select * from papers order by id").fetchall()
+        rows = conn.execute(
+            """
+            select * from papers
+            order by
+                case when title = '项目物资管理岗位考核题库' then 1 else 0 end,
+                id
+            """
+        ).fetchall()
     return [dict(row) for row in rows]
 
 

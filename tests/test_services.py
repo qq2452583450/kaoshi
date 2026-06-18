@@ -376,6 +376,30 @@ def test_import_question_bank_docx_appends_idempotently(tmp_path, monkeypatch):
     assert len(imported_questions) == 80
 
 
+def test_replace_exam_papers_from_docx_preserves_question_bank(tmp_path, monkeypatch):
+    _setup_service_db(tmp_path, monkeypatch)
+    services.seed_papers(_sample_papers())
+    bank_docx = next(path for path in Path.cwd().glob("*.docx") if path.stat().st_size == 23013)
+    services.import_question_bank_docx(bank_docx)
+    replacement_docx = next(path for path in Path.cwd().glob("*.docx") if path.stat().st_size == 49641)
+
+    result = services.replace_exam_papers_from_docx(replacement_docx)
+    papers = services.list_papers()
+    titles = [paper["title"] for paper in papers]
+
+    assert result == {"inserted": 5, "removed": 1}
+    assert "Sample Paper" not in titles
+    assert "项目物资管理岗位考核题库" in titles
+    assert titles[:5] == [
+        "第一套（新编实操版）",
+        "第二套（新编案例版）",
+        "第三套（新编内控版）",
+        "第四套（新编实操易错版）",
+        "第五套（新编综合押题版）",
+    ]
+    assert services.get_current_exam_paper()["title"] == "第一套（新编实操版）"
+
+
 def test_review_answer_completes_attempt_and_final_score(tmp_path, monkeypatch):
     _setup_service_db(tmp_path, monkeypatch)
     services.seed_papers(_sample_papers())
@@ -402,13 +426,19 @@ def test_review_answer_completes_attempt_and_final_score(tmp_path, monkeypatch):
     assert attempt["final_score"] == 8
 
 
-def test_ensure_papers_seeded_imports_complete_available_papers_from_truncated_docx(tmp_path, monkeypatch):
+def test_ensure_papers_seeded_imports_preferred_receiving_exam_docx(tmp_path, monkeypatch):
     _setup_service_db(tmp_path, monkeypatch)
 
     status = services.ensure_papers_seeded()
     papers = services.list_papers()
 
     assert status["seeded"] is True
-    assert status["paper_count"] == 4
-    assert "paper 5" in status["warning"]
-    assert len(papers) == 4
+    assert status["paper_count"] == 5
+    assert status["warning"] == ""
+    assert [paper["title"] for paper in papers] == [
+        "第一套（新编实操版）",
+        "第二套（新编案例版）",
+        "第三套（新编内控版）",
+        "第四套（新编实操易错版）",
+        "第五套（新编综合押题版）",
+    ]
