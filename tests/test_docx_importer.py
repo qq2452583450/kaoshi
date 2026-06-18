@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from exam_system import docx_importer
-from exam_system.docx_importer import parse_docx
+from exam_system.docx_importer import parse_docx, parse_question_bank_docx
 
 
 def test_root_docx_is_detected():
@@ -240,3 +240,25 @@ def test_complete_current_docx_chunks_one_to_four_parse_with_expected_counts():
             "short_answer": 2,
             "case_analysis": 1,
         }
+
+
+def test_parse_project_material_question_bank_docx():
+    bank_docx = next(path for path in Path.cwd().glob("*.docx") if path.stat().st_size == 23013)
+
+    paper = parse_question_bank_docx(bank_docx)
+    counts = {}
+    for question in paper["questions"]:
+        counts[question["question_type"]] = counts.get(question["question_type"], 0) + 1
+
+    assert paper["title"] == "项目物资管理岗位考核题库"
+    assert paper["total_score"] == 150
+    assert len(paper["questions"]) == 80
+    assert counts == {
+        "single_choice": 30,
+        "multiple_choice": 20,
+        "true_false": 30,
+    }
+    assert paper["questions"][0]["correct_answer"] == "B"
+    assert paper["questions"][30]["correct_answer"] == "ABCD"
+    assert paper["questions"][50]["correct_answer"] == "×"
+    assert paper["questions"][51]["correct_answer"] == "√"

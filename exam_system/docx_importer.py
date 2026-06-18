@@ -14,6 +14,8 @@ PAPER_TITLE_RE = re.compile(r"^第[一二三四五]套(?!.*参考答案)")
 ANSWER_TOKEN_RE = re.compile(r"(\d+)\s*[.．、]\s*([A-E√×]+)")
 NUMBERED_TEXT_RE = re.compile(r"^(\d+)\s*[.．、]\s*(.*)")
 OPTION_RE = re.compile(r"([A-E])[.．、](.*?)(?=\s+[A-E][.．、]|$)")
+BANK_OPTION_RE = re.compile(r"^([A-D])[\s.．、]+(.+)$")
+BANK_ANSWER_TOKEN_RE = re.compile(r"(\d+)\s*[.．、]?\s*([A-D]+|[√×])")
 
 
 def parse_docx(path: Path) -> list[dict]:
@@ -47,6 +49,148 @@ def parse_available_docx(path: Path) -> tuple[list[dict], str]:
             return papers, str(exc)
 
     return papers, ""
+
+
+def parse_question_bank_docx(path: Path) -> dict:
+    """Parse a single objective-question bank document."""
+    lines = _read_lines(path)
+    title = lines[0] if lines else path.stem
+    single_start = _find_index(lines, lambda line: line.startswith("一、单选题"), "Question bank missing single-choice section.")
+    multiple_start = _find_index(lines, lambda line: line.startswith("二、多选题"), "Question bank missing multiple-choice section.")
+    true_false_start = _find_index(lines, lambda line: line.startswith("三、判断题"), "Question bank missing true/false section.")
+    answer_start = _find_index(lines, lambda line: line == "参考答案", "Question bank missing answers section.")
+
+    answer_lines = lines[answer_start + 1 :]
+    single_answer_start = _find_index(
+        answer_lines, lambda line: line.startswith("一、单选题"), "Question bank missing single-choice answers."
+    )
+    multiple_answer_start = _find_index(
+        answer_lines, lambda line: line.startswith("二、多选题"), "Question bank missing multiple-choice answers."
+    )
+    true_false_answer_start = _find_index(
+        answer_lines, lambda line: line.startswith("三、判断题"), "Question bank missing true/false answers."
+    )
+    answers = {
+        "single_choice": _parse_bank_answer_tokens(
+            answer_lines[single_answer_start + 1 : multiple_answer_start]
+        ),
+        "multiple_choice": _parse_bank_answer_tokens(
+            answer_lines[multiple_answer_start + 1 : true_false_answer_start]
+        ),
+        "true_false": _parse_bank_answer_tokens(answer_lines[true_false_answer_start + 1 :]),
+    }
+
+    single_questions = _parse_bank_choice_questions(
+        lines[single_start + 1 : multiple_start],
+        "single_choice",
+        answers["single_choice"],
+    )
+    multiple_questions = _parse_bank_choice_questions(
+        lines[multiple_start + 1 : true_false_start],
+        "multiple_choice",
+        answers["multiple_choice"],
+    )
+    true_false_questions = _parse_bank_true_false_questions(
+        lines[true_false_start + 1 : answer_start],
+        answers["true_false"],
+    )
+
+    questions = []
+    order_no = 1
+    for group in (single_questions, multiple_questions, true_false_questions):
+        questions.extend(_with_order_numbers(group, order_no))
+        order_no += len(group)
+
+    expected_counts = {
+        "single_choice": 30,
+        "multiple_choice": 20,
+        "true_false": 30,
+    }
+    actual_counts = {
+        question_type: sum(1 for question in questions if question["question_type"] == question_type)
+        for question_type in expected_counts
+    }
+    if actual_counts != expected_counts:
+        raise ValueError(f"Question bank counts mismatch: {actual_counts}.")
+
+    return {
+        "title": title,
+        "total_score": sum(question["score"] for question in questions),
+        "duration_minutes": EXAM_DURATION_MINUTES,
+        "questions": questions,
+    }
+
+
+def _parse_bank_answer_tokens(lines: list[str]) -> dict[int, str]:
+    answers: dict[int, str] = {}
+    for line in lines:
+        for number, answer in BANK_ANSWER_TOKEN_RE.findall(line):
+            answers[int(number)] = answer
+    return answers
+
+
+def _parse_bank_choice_questions(
+    lines: list[str], question_type: str, answers: dict[int, str]
+) -> list[dict]:
+    questions: list[dict] = []
+    stem = ""
+    options: list[dict] = []
+
+    def flush() -> None:
+        if not stem and not options:
+            return
+        type_order = len(questions) + 1
+        if len(options) != 4:
+            raise ValueError(
+                f"Question bank {question_type} question {type_order} "
+                f"expected 4 options, found {len(options)}."
+            )
+        correct_answer = answers.get(type_order, "")
+        if not correct_answer:
+            raise ValueError(f"Question bank {question_type} question {type_order} missing answer.")
+        questions.append(
+            _question(
+                question_type=question_type,
+                type_order=type_order,
+                stem=stem,
+                options=options.copy(),
+                correct_answer=correct_answer,
+            )
+        )
+
+    for line in lines:
+        option_match = BANK_OPTION_RE.match(line)
+        if option_match:
+            options.append({"key": option_match.group(1), "text": option_match.group(2).strip()})
+            continue
+        flush()
+        stem = line
+        options = []
+
+    flush()
+    return questions
+
+
+def _parse_bank_true_false_questions(lines: list[str], answers: dict[int, str]) -> list[dict]:
+    questions = []
+    for line in lines:
+        stem = re.sub(r"^\d+\s+", "", line).strip()
+        if not stem:
+            continue
+        type_order = len(questions) + 1
+        correct_answer = answers.get(type_order, "")
+        if correct_answer not in {"√", "×"}:
+            raise ValueError(f"Question bank true/false question {type_order} missing answer.")
+        questions.append(
+            _question(
+                question_type="true_false",
+                type_order=type_order,
+                stem=stem,
+                options=[],
+                correct_answer=correct_answer,
+            )
+        )
+    return questions
 
 
 def _read_lines(path: Path) -> list[str]:

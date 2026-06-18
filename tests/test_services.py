@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 
 import pytest
 
@@ -357,6 +358,22 @@ def test_seed_papers_and_submit_attempt_scores_objective_and_subjective(tmp_path
     assert attempt["status"] == "pending_review"
     assert attempt["objective_score"] == 2
     assert attempt["suggested_subjective_score"] == 3.5
+
+
+def test_import_question_bank_docx_appends_idempotently(tmp_path, monkeypatch):
+    _setup_service_db(tmp_path, monkeypatch)
+    services.seed_papers(_sample_papers())
+    bank_docx = next(path for path in Path.cwd().glob("*.docx") if path.stat().st_size == 23013)
+
+    first_import = services.import_question_bank_docx(bank_docx)
+    second_import = services.import_question_bank_docx(bank_docx)
+    papers = services.list_papers()
+    imported_questions = services.get_paper_questions(first_import["paper_id"])
+
+    assert first_import == {"paper_id": second_import["paper_id"], "created": True}
+    assert second_import["created"] is False
+    assert [paper["title"] for paper in papers].count("项目物资管理岗位考核题库") == 1
+    assert len(imported_questions) == 80
 
 
 def test_review_answer_completes_attempt_and_final_score(tmp_path, monkeypatch):

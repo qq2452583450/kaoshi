@@ -8,7 +8,7 @@ from pathlib import Path
 
 from . import db
 from .config import BASE_DIR
-from .docx_importer import parse_available_docx, parse_docx
+from .docx_importer import parse_available_docx, parse_docx, parse_question_bank_docx
 from .grading import grade_objective, suggest_subjective_score
 
 OBJECTIVE_TYPES = {"single_choice", "multiple_choice", "true_false"}
@@ -133,6 +133,51 @@ def seed_papers(papers: list[dict]) -> None:
                         """,
                         (question_id, option["key"], option["text"]),
                     )
+
+
+def import_question_bank_docx(path) -> dict:
+    paper = parse_question_bank_docx(Path(path))
+    with db.connect() as conn:
+        existing = conn.execute(
+            "select id from papers where title = ?",
+            (paper["title"],),
+        ).fetchone()
+        if existing:
+            return {"paper_id": int(existing["id"]), "created": False}
+
+        cursor = conn.execute(
+            "insert into papers (title, duration_minutes, total_score) values (?, ?, ?)",
+            (paper["title"], paper["duration_minutes"], paper["total_score"]),
+        )
+        paper_id = int(cursor.lastrowid)
+        for question in paper["questions"]:
+            question_cursor = conn.execute(
+                """
+                insert into questions
+                (paper_id, question_type, order_no, stem, correct_answer, reference_answer, keywords, score)
+                values (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    paper_id,
+                    question["question_type"],
+                    question["order_no"],
+                    question["stem"],
+                    question.get("correct_answer", ""),
+                    question.get("reference_answer", ""),
+                    question.get("keywords", ""),
+                    question["score"],
+                ),
+            )
+            question_id = int(question_cursor.lastrowid)
+            for option in question.get("options", []):
+                conn.execute(
+                    """
+                    insert into question_options (question_id, option_key, option_text)
+                    values (?, ?, ?)
+                    """,
+                    (question_id, option["key"], option["text"]),
+                )
+    return {"paper_id": paper_id, "created": True}
 
 
 def ensure_papers_seeded() -> dict:
