@@ -13,7 +13,7 @@ def test_root_docx_is_detected():
 
 
 def test_parse_current_root_docx_fails_on_incomplete_fifth_paper():
-    root_docx = list(Path.cwd().glob("*.docx"))[0]
+    root_docx = _original_exam_docx()
 
     with pytest.raises(ValueError) as exc_info:
         parse_docx(root_docx)
@@ -218,7 +218,7 @@ def test_validation_rejects_missing_subjective_reference_answer():
 
 
 def test_complete_current_docx_chunks_one_to_four_parse_with_expected_counts():
-    root_docx = list(Path.cwd().glob("*.docx"))[0]
+    root_docx = _original_exam_docx()
     lines = docx_importer._read_lines(root_docx)
     paper_ranges = docx_importer._paper_ranges(lines)
 
@@ -262,3 +262,7 @@ def test_parse_project_material_question_bank_docx():
     assert paper["questions"][30]["correct_answer"] == "ABCD"
     assert paper["questions"][50]["correct_answer"] == "×"
     assert paper["questions"][51]["correct_answer"] == "√"
+
+
+def _original_exam_docx():
+    return next(path for path in Path.cwd().glob("*.docx") if path.stat().st_size == 40539)

@@ -185,7 +185,7 @@ def ensure_papers_seeded() -> dict:
     if existing:
         return {"seeded": False, "paper_count": len(existing), "warning": ""}
 
-    docx_files = sorted(Path(BASE_DIR).glob("*.docx"))
+    docx_files = sorted(Path(BASE_DIR).glob("*.docx"), key=_seed_source_priority)
     if not docx_files:
         return {"seeded": False, "paper_count": 0, "warning": "No .docx source file found."}
 
@@ -197,6 +197,15 @@ def ensure_papers_seeded() -> dict:
 
     seed_papers(papers)
     return {"seeded": True, "paper_count": len(papers), "warning": warning}
+
+
+def _seed_source_priority(path: Path) -> tuple[int, str]:
+    name = path.name
+    if "岗位职责专项考试卷" in name:
+        return (0, name)
+    if "题库" in name:
+        return (2, name)
+    return (1, name)
 
 
 def list_papers() -> list[dict]:
